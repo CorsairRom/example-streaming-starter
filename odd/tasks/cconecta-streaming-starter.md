@@ -32,6 +32,9 @@ S8. Documentacion de arranque en `README.md`, arquitectura en `ARCHITECTURE.md`,
 `docs/modules/webhook-streams/README.md`, catalogo de errores en `docs/error-codes-catalog.md`, y
 `BACKLOG.md` con las recomendaciones de fase 2 (persistencia de eventos, simulador, dedupe, HMAC).
 
+S9. `HOST` y `PORT` se leen de la configuracion (`.env` o variables de entorno). Ningun target del
+`Makefile` fija host ni puerto: cambiar `.env` debe ser suficiente para mover el servidor de puerto.
+
 ## Tasks
 
 - T1 — Esqueleto (pyproject, ruff, Makefile, .env.example, .gitignore, .python-version) — S8 — `done`
@@ -42,6 +45,7 @@ S8. Documentacion de arranque en `README.md`, arquitectura en `ARCHITECTURE.md`,
 - T5 — Panel admin (login, sesion, CSRF, crear/rotar/revocar) — S5, S6 — `done`
 - T6 — Documentacion + BACKLOG — S8 — `done`
 - T7 — Verificacion (pytest verde, ruff, servidor arriba + curl real) — todas — `done`
+- T8 — Entrypoint `src/run.py` que toma `HOST`/`PORT` de `Settings`; el `Makefile` delega — S9 — `done`
 
 ## Log
 
@@ -88,3 +92,9 @@ Ademas se exige host en `wss://` y se agregaron los 23 probes del verificador co
 `tests/test_verification_regressions.py`. Recheck: `45 passed`, `ruff check` limpio, `markdownlint` 0
 issues, y smoke real: sin key + JSON roto 401, key invalida + JSON roto 401, key valida + JSON roto 422,
 LIVE valido 200, `wss:///nohost` 422.
+
+L7 (2026-11-06, bug reportado por el humano): "parece que no se esta respetando el .env porque tengo el
+puerto 8000 ocupado ... fui al .env a cambiar el puerto al 8100 y no paso nada". Causa: `make run`
+pasaba `--host 127.0.0.1 --port 8000` a uvicorn, y esos flags pisan la configuracion de la app; ademas
+`HOST`/`PORT` de `Settings` no los leia nadie. Corregido con `src/run.py` (unica fuente de verdad) y el
+`Makefile` ya no fija host ni puerto. Regresion en `tests/test_run.py`.

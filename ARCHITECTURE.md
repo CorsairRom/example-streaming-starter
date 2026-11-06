@@ -107,6 +107,12 @@ El requerimiento acepta `200` o `204`. Se elige `200` con un body mínimo porque
 recién empieza, ver `{"status":"accepted"}` confirma que el request llegó al código y no a un proxy.
 Cambiar a `204` es una línea en `routes/webhook.py`.
 
+### Dónde se define el puerto
+
+`HOST` y `PORT` se leen en `settings.py` y los consume `src/run.py`. El `Makefile` no fija ninguno: si
+`make run` pasara `--port 8000`, ese flag pisaría el valor de `.env` (uvicorn prioriza sus flags sobre la
+configuración de la app). Esa fue una falla real de la primera versión, pineada por `tests/test_run.py`.
+
 ## 4. Flujo del panel
 
 1. `GET /admin/login` crea el token CSRF en la sesión y lo embebe en el formulario.
@@ -175,7 +181,7 @@ recorrer toda la tabla.
 | `extra="ignore"` en el payload | Si QForest agrega un campo, la integración no se rompe. | Un campo mal escrito por QForest se ignora en silencio. |
 | Body leído a mano en el handler | Garantiza `401` antes de `422` aunque el JSON esté roto. | Se pierde la validación automática de FastAPI; se rearma como `AppError`. |
 | `last_used_at` solo en eventos aceptados | Un request rechazado no altera la base. | No refleja intentos fallidos (van al log). |
-| `--app-dir src` en uvicorn | Evita configurar un paquete instalable. | Hay que recordarlo al invocar uvicorn a mano. |
+| `src/run.py` como entrypoint | `HOST` y `PORT` salen de `.env`: una sola fuente de verdad. | Hay que usar `make run` (o `python src/run.py`), no `uvicorn` a mano. |
 | Sin persistencia de eventos | El pedido original era un receptor mínimo. | No hay evidencia histórica de recepción; ver BACKLOG. |
 
 ## 9. Cómo extender

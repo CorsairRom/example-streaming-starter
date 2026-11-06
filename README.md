@@ -62,7 +62,9 @@ cp .env.example .env
 make run
 ```
 
-Queda escuchando en `http://127.0.0.1:8000`.
+Queda escuchando en la dirección de `HOST` y `PORT` en `.env` (por defecto `http://127.0.0.1:8000`).
+Si ese puerto está ocupado, cambie `PORT` en `.env` y vuelva a ejecutar `make run`: no hay que tocar el
+`Makefile`.
 
 | Recurso | URL |
 | --- | --- |
@@ -173,7 +175,7 @@ Toda la configuración vive en `.env` (ver `.env.example`). Nunca se versiona.
 | `APP_VERSION` | `v0.1.0` | Versión reportada por `/health`. |
 | `ENV` | `local` | Entorno (`local`, `staging`, `production`). |
 | `DEBUG` | `false` | Modo de depuración. |
-| `HOST` / `PORT` | `127.0.0.1` / `8000` | Dirección de escucha. |
+| `HOST` / `PORT` | `127.0.0.1` / `8000` | Dirección de escucha. Los usa `make run`. |
 | `DATABASE_URL` | `sqlite+pysqlite:///./data/app.db` | Base de datos. SQLite por defecto. |
 | `ADMIN_USERNAME` | `admin` | Usuario del panel. |
 | `ADMIN_PASSWORD` | `change-me-please` | Contraseña del panel. **Cambiar.** |
@@ -211,6 +213,7 @@ make clean     # borra .venv, caches y datos locales
 │   ├── container.py      # Composition root
 │   ├── main.py           # create_app() y app ASGI
 │   └── settings.py       # Configuración con pydantic-settings
+├── src/run.py            # Entrypoint: toma HOST y PORT de .env
 ├── tests/                # Tests de contrato (webhook, api keys, panel)
 ├── docs/                 # Contrato, catálogo de errores y documento original
 ├── odd/tasks/            # Registro de trabajo de la construcción inicial
@@ -242,7 +245,8 @@ La arquitectura y las decisiones están explicadas en [ARCHITECTURE.md](./ARCHIT
 | `401 STREAM_API_KEY_MISSING` | Falta el header `X-API-Key`. | Agregar el header en el POST. |
 | `401 STREAM_API_KEY_INVALID` | Clave revocada, rotada o mal copiada. | Crear/rotar una clave nueva en el panel. |
 | `422 STREAM_PAYLOAD_INVALID` | `datetime` sin zona horaria o `url` que no es `wss://`. | Revisar el detalle en la respuesta. |
-| `ModuleNotFoundError: No module named 'app'` | Se levantó `uvicorn` sin `--app-dir src`. | Usar `make run` o agregar `--app-dir src`. |
+| `[Errno 98] address already in use` | El puerto de `PORT` está ocupado por otro proceso. | Cambiar `PORT` en `.env` (por ejemplo `8100`) y volver a `make run`. |
+| `ModuleNotFoundError: No module named 'app'` | Se levantó `uvicorn` a mano sin `--app-dir src`. | Usar `make run`. |
 | El panel no guarda la sesión | `SESSION_SECRET` cambió entre requests. | Dejar un valor fijo en `.env`. |
 
 ---

@@ -1,6 +1,4 @@
 SHELL := /bin/bash
-HOST ?= 127.0.0.1
-PORT ?= 8000
 
 .PHONY: help install run dev test lint format check db-reset clean
 
@@ -10,11 +8,11 @@ help: ## Show available targets
 install: ## Create the virtualenv and install dependencies
 	uv sync
 
-run: ## Start the API without reload
-	uv run uvicorn app.main:app --app-dir src --host $(HOST) --port $(PORT)
+run: ## Start the API using HOST and PORT from .env
+	uv run python src/run.py
 
 dev: ## Start the API with auto-reload
-	uv run uvicorn app.main:app --app-dir src --host $(HOST) --port $(PORT) --reload
+	uv run python src/run.py --reload
 
 test: ## Run the test suite
 	uv run pytest
