@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-WEBHOOK = "/webhooks/qforest/streams"
+WEBHOOK = "/webhooks/streams"
 
 
 def test_health_reports_version(client: TestClient) -> None:
@@ -60,7 +60,7 @@ def test_deferred_event_is_accepted(
 def test_non_wss_url_is_rejected(
     client: TestClient, payload: dict[str, object], api_key: str
 ) -> None:
-    payload["url"] = "https://hls.media.qforest.online/qforest/CLA58"
+    payload["url"] = "https://media.example.com/live/CLA58"
 
     response = client.post(WEBHOOK, json=payload, headers={"X-API-Key": api_key})
 

@@ -6,7 +6,7 @@ from enum import StrEnum
 
 
 class StreamState(StrEnum):
-    """Lifecycle state reported by QForest for a camera stream."""
+    """Lifecycle state reported by the sender for a camera stream."""
 
     LIVE = "LIVE"
     DEFERRED = "DEFERRED"
@@ -14,7 +14,7 @@ class StreamState(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class StreamEvent:
-    """A stream lifecycle event exactly as QForest sends it."""
+    """A stream lifecycle event exactly as the sender emits it."""
 
     camera_device_id: str
     occurred_at: datetime

@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.infrastructure.models import ApiKeyModel
 
-WEBHOOK = "/webhooks/qforest/streams"
+WEBHOOK = "/webhooks/streams"
 
 
 def test_key_is_not_stored_in_plaintext(app, api_key: str) -> None:

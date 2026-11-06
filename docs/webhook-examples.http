@@ -15,50 +15,50 @@ GET {{baseUrl}}/health
 GET {{baseUrl}}/openapi.json
 
 ### Evento LIVE (inicio de transmisión)
-POST {{baseUrl}}/webhooks/qforest/streams
+POST {{baseUrl}}/webhooks/streams
 Content-Type: application/json
 X-API-Key: {{apiKey}}
 
 {
   "camera_device_id": "CLA58",
   "datetime": "2026-10-27T15:32:24.935000+00:00",
-  "url": "wss://hls.media.qforest.online/qforest/CLA58",
+  "url": "wss://media.example.com/live/CLA58",
   "electromagnetic_spectrum": "combined",
   "state": "LIVE"
 }
 
 ### Evento DEFERRED (fin de transmisión)
-POST {{baseUrl}}/webhooks/qforest/streams
+POST {{baseUrl}}/webhooks/streams
 Content-Type: application/json
 X-API-Key: {{apiKey}}
 
 {
   "camera_device_id": "CLA58",
   "datetime": "2026-10-27T15:40:00.000000+00:00",
-  "url": "wss://hls.media.qforest.online/qforest/CLA58",
+  "url": "wss://media.example.com/live/CLA58",
   "electromagnetic_spectrum": "combined",
   "state": "DEFERRED"
 }
 
 ### Sin API key (espera 401)
-POST {{baseUrl}}/webhooks/qforest/streams
+POST {{baseUrl}}/webhooks/streams
 Content-Type: application/json
 
 {
   "camera_device_id": "CLA58",
   "datetime": "2026-10-27T15:32:24.935000+00:00",
-  "url": "wss://hls.media.qforest.online/qforest/CLA58",
+  "url": "wss://media.example.com/live/CLA58",
   "state": "LIVE"
 }
 
 ### Payload inválido (espera 422)
-POST {{baseUrl}}/webhooks/qforest/streams
+POST {{baseUrl}}/webhooks/streams
 Content-Type: application/json
 X-API-Key: {{apiKey}}
 
 {
   "camera_device_id": "CLA58",
   "datetime": "2026-10-27T15:32:24",
-  "url": "https://hls.media.qforest.online/qforest/CLA58",
+  "url": "https://media.example.com/live/CLA58",
   "state": "LIVE"
 }

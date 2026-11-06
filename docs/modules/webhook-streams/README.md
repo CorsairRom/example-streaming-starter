@@ -1,11 +1,12 @@
 # Módulo: webhook de streaming
 
-Contrato público que QForest consume. Es la única interfaz que necesitan conocer para integrarse.
+Contrato público que consume el emisor de streaming. Es la única interfaz que necesita conocer
+para integrarse.
 
 ## Endpoint
 
 ```http
-POST /webhooks/qforest/streams
+POST /webhooks/streams
 ```
 
 | Requisito | Valor |
@@ -21,7 +22,7 @@ POST /webhooks/qforest/streams
 {
   "camera_device_id": "CLA58",
   "datetime": "2026-10-27T15:32:24.935000+00:00",
-  "url": "wss://hls.media.qforest.online/qforest/CLA58",
+  "url": "wss://media.example.com/live/CLA58",
   "electromagnetic_spectrum": "combined",
   "state": "LIVE"
 }
@@ -97,25 +98,25 @@ API_URL="http://127.0.0.1:8000"
 API_KEY="cck_..."
 
 # Inicio de transmisión
-curl -i -X POST "$API_URL/webhooks/qforest/streams" \
+curl -i -X POST "$API_URL/webhooks/streams" \
   -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "camera_device_id": "CLA58",
     "datetime": "2026-10-27T15:32:24.935000+00:00",
-    "url": "wss://hls.media.qforest.online/qforest/CLA58",
+    "url": "wss://media.example.com/live/CLA58",
     "electromagnetic_spectrum": "combined",
     "state": "LIVE"
   }'
 
 # Fin de transmisión
-curl -i -X POST "$API_URL/webhooks/qforest/streams" \
+curl -i -X POST "$API_URL/webhooks/streams" \
   -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "camera_device_id": "CLA58",
     "datetime": "2026-10-27T15:40:00.000000+00:00",
-    "url": "wss://hls.media.qforest.online/qforest/CLA58",
+    "url": "wss://media.example.com/live/CLA58",
     "electromagnetic_spectrum": "combined",
     "state": "DEFERRED"
   }'

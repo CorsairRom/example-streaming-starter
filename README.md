@@ -1,10 +1,11 @@
 # c-Conecta Streaming Starter
 
-Receptor mínimo para los eventos de streaming que **QForest** envía a **c-Conecta**.
+Receptor mínimo para eventos de streaming: recibe por `HTTP POST` el inicio (`LIVE`) y el fin
+(`DEFERRED`) de una transmisión de cámara.
 
-QForest notifica por `HTTP POST` cada vez que una cámara empieza (`LIVE`) o termina (`DEFERRED`) una
-transmisión. Este repositorio implementa ese endpoint, la validación de la API key y un panel de
-administración para gestionar esas claves.
+El servicio lo opera c-Conecta. El **emisor** es el sistema que transmite las cámaras: envía el evento y
+se autentica con una API key que c-Conecta le entrega. Este repositorio implementa el endpoint, la
+validación de la clave y un panel para administrarlas.
 
 No hace falta saber de APIs para levantar esto: son tres comandos y una URL.
 
@@ -14,18 +15,18 @@ No hace falta saber de APIs para levantar esto: son tres comandos y una URL.
 
 | Incluido | Detalle |
 | --- | --- |
-| `POST /webhooks/qforest/streams` | Recibe el evento, valida la API key y responde `200`. |
-| Autenticación por API key | Header `X-API-Key`. La clave la genera c-Conecta y se la entrega a QForest. |
+| `POST /webhooks/streams` | Recibe el evento, valida la API key y responde `200`. |
+| Autenticación por API key | Header `X-API-Key`. La clave la genera c-Conecta y se la entrega al emisor. |
 | Panel de administración | `/admin`: crear, rotar y revocar claves. |
 | Documentación interactiva | `/docs` (Swagger) y `/openapi.json`. |
 | Health check | `GET /health`. |
 | Persistencia de claves | SQLite. Cero configuración. |
-| Tests | `make test` (22 casos). |
+| Tests | `make test` (48 casos). |
 
 ## Qué **no** incluye (fase 2)
 
 - Guardar los eventos recibidos (persistencia, historial, deduplicación).
-- Simulador de QForest para probar sin esperar a una cámara real.
+- Simulador del emisor para probar sin esperar a una cámara real.
 - Firma HMAC del payload, rate limiting, migraciones y Postgres.
 
 Todo eso está priorizado en [BACKLOG.md](./BACKLOG.md).
@@ -94,7 +95,7 @@ La clave se muestra **una sola vez**:
 cck_9aa3d10908_6f1c3a4d9e8b7a2c5d0e1f3a4b6c7d8e9f0a1b2c
 ```
 
-Cópiela y entréguela a QForest por un canal seguro. En la base de datos solo queda el prefijo y un hash
+Cópiela y entréguela al emisor por un canal seguro. En la base de datos solo queda el prefijo y un hash
 `scrypt`: **no se puede recuperar**. Si se pierde, se rota y se entrega la nueva.
 
 ### 3. Probar el endpoint
@@ -103,13 +104,13 @@ Cópiela y entréguela a QForest por un canal seguro. En la base de datos solo q
 export API_URL="http://127.0.0.1:8000"
 export API_KEY="cck_...la clave completa..."
 
-curl -i -X POST "$API_URL/webhooks/qforest/streams" \
+curl -i -X POST "$API_URL/webhooks/streams" \
   -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "camera_device_id": "CLA58",
     "datetime": "2026-10-27T15:32:24.935000+00:00",
-    "url": "wss://hls.media.qforest.online/qforest/CLA58",
+    "url": "wss://media.example.com/live/CLA58",
     "electromagnetic_spectrum": "combined",
     "state": "LIVE"
   }'
@@ -126,19 +127,19 @@ content-type: application/json
 
 ---
 
-## Contrato que se entrega a QForest
+## Contrato que se entrega al emisor
 
-Esto es lo único que QForest necesita para integrarse:
+Esto es lo único que el emisor necesita para integrarse:
 
 | Dato | Valor |
 | --- | --- |
 | Método | `POST` |
-| URL | `https://<dominio-de-c-conecta>/webhooks/qforest/streams` |
+| URL | `https://<dominio-de-c-conecta>/webhooks/streams` |
 | Header de autenticación | `X-API-Key: <clave entregada por c-Conecta>` |
 | Content-Type | `application/json` |
 | Respuesta de éxito | `200 OK` con `{"status":"accepted"}` |
 | Timeout recomendado | 5 segundos |
-| Reintentos recomendados | Sí, con backoff; el receptor es idempotente a nivel de contrato (ver BACKLOG) |
+| Reintentos recomendados | Sí, con backoff; el receptor todavía no deduplica (ver BACKLOG) |
 
 Payload:
 
@@ -146,7 +147,7 @@ Payload:
 {
   "camera_device_id": "CLA58",
   "datetime": "2026-10-27T15:32:24.935000+00:00",
-  "url": "wss://hls.media.qforest.online/qforest/CLA58",
+  "url": "wss://media.example.com/live/CLA58",
   "electromagnetic_spectrum": "combined",
   "state": "LIVE"
 }
@@ -258,5 +259,4 @@ La arquitectura y las decisiones están explicadas en [ARCHITECTURE.md](./ARCHIT
 - [docs/error-codes-catalog.md](./docs/error-codes-catalog.md) — códigos de error.
 - [docs/webhook-examples.http](./docs/webhook-examples.http) — ejemplos ejecutables
   (VS Code REST Client / Thunder Client).
-- [docs/referencia/](./docs/referencia/) — requerimiento original enviado por QForest.
 - [BACKLOG.md](./BACKLOG.md) — fase 2.

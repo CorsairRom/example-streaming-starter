@@ -44,7 +44,7 @@ def payload() -> dict[str, object]:
     return {
         "camera_device_id": "CLA58",
         "datetime": "2026-10-27T15:32:24.935000+00:00",
-        "url": "wss://hls.media.qforest.online/qforest/CLA58",
+        "url": "wss://media.example.com/live/CLA58",
         "electromagnetic_spectrum": "combined",
         "state": "LIVE",
     }

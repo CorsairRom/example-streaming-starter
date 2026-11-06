@@ -8,7 +8,7 @@ alcance, en orden de valor para la integración. No están implementadas.
 ### 1. Persistir los eventos recibidos
 
 **Por qué.** Hoy el evento solo se escribe en el log: si el proceso se reinicia o el log rota, no queda
-evidencia de que QForest envió algo. Ante un reclamo ("la cámara estaba en vivo y no lo vimos") no hay
+evidencia de que el emisor envió algo. Ante un reclamo ("la cámara estaba en vivo y no lo vimos") no hay
 forma de responder.
 
 **Qué hacer.**
@@ -22,9 +22,9 @@ forma de responder.
 **Criterio de aceptación.** Enviar el mismo payload dos veces deja una sola fila; el panel muestra los
 eventos ordenados por fecha; los tests cubren deduplicación y retención.
 
-### 2. Simulador de QForest
+### 2. Simulador del emisor
 
-**Por qué.** c-Conecta no puede probar el flujo completo hasta que QForest conecte su emisor. Un
+**Por qué.** c-Conecta no puede probar el flujo completo hasta que el emisor conecte su lado. Un
 simulador les permite validar red, HTTPS, proxy y firewall por su cuenta.
 
 **Qué hacer.**
@@ -39,10 +39,10 @@ estados y falla con un mensaje claro si falta la API key.
 
 ### 3. Idempotencia explícita en el contrato
 
-**Por qué.** Si QForest reintenta un POST (timeout, caída de red), el evento se procesa dos veces. Hoy
+**Por qué.** Si el emisor reintenta un POST (timeout, caída de red), el evento se procesa dos veces. Hoy
 no duele porque no se persiste, pero duele apenas exista la tabla de eventos.
 
-**Qué hacer.** Pedir a QForest un `event_id` o aceptar un header `Idempotency-Key`. Mientras no exista,
+**Qué hacer.** Pedir al emisor un `event_id` o aceptar un header `Idempotency-Key`. Mientras no exista,
 deduplicar por `(camera_device_id, datetime, state)`.
 
 **Criterio de aceptación.** Dos requests con la misma identidad producen un solo efecto aguas abajo y la
@@ -55,7 +55,7 @@ segunda responde `200` sin duplicar.
 **Por qué.** La API key autentica al emisor, pero no protege la integridad del cuerpo si pasa por un
 proxy intermedio ni permite detectar replay.
 
-**Qué hacer.** Header `X-QForest-Signature: sha256=<hmac>` sobre `timestamp + body`, con secreto
+**Qué hacer.** Header `X-Signature: sha256=<hmac>` sobre `timestamp + body`, con secreto
 compartido y ventana de tolerancia de 5 minutos. Mantener `X-API-Key` como autenticación primaria y
 HMAC como verificación adicional durante la transición.
 

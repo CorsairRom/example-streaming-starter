@@ -1,10 +1,10 @@
 # Módulo: API keys
 
-Cómo c-Conecta emite, entrega y administra las claves que QForest usa para autenticarse.
+Cómo c-Conecta emite, entrega y administra las claves que el emisor usa para autenticarse.
 
 ## Concepto
 
-La clave la genera **c-Conecta** y se la entrega a **QForest** por un canal seguro. QForest la envía en
+La clave la genera **c-Conecta** y se la entrega al emisor por un canal seguro. El emisor la envía en
 cada request:
 
 ```http
@@ -50,7 +50,7 @@ Un volcado de la base **no** permite reconstruir las claves.
 
 1. Panel → **Crear key** → nombre identificatorio.
 2. La clave completa aparece una sola vez.
-3. Copiarla y entregarla a QForest.
+3. Copiarla y entregarla al emisor.
 
 ### Rotar
 
@@ -64,8 +64,8 @@ Pasos:
 
 1. Panel → **Rotar** en la fila de la clave.
 2. Copiar la clave nueva.
-3. Entregarla a QForest.
-4. Confirmar que QForest ya la está usando (ver `Último uso` en el panel).
+3. Entregarla al emisor.
+4. Confirmar que el emisor ya la está usando (ver `Último uso` en el panel).
 
 La clave anterior deja de funcionar **inmediatamente**. Coordinar la entrega antes de rotar para evitar
 una ventana sin autenticación.

@@ -70,7 +70,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         description=(
-            "Receptor mínimo de eventos de streaming (LIVE / DEFERRED) enviados por QForest. "
+            "Receptor mínimo de eventos de streaming (LIVE / DEFERRED) enviados por el emisor. "
             "Incluye panel de administración de API keys."
         ),
         lifespan=lifespan,

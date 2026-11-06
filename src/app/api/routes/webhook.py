@@ -11,13 +11,13 @@ from app.container import Container
 from app.domain.entities import ApiKeyRecord, StreamEvent, StreamState
 from app.domain.errors import StreamPayloadInvalidError
 
-router = APIRouter(prefix="/webhooks", tags=["qforest webhook"])
+router = APIRouter(prefix="/webhooks", tags=["streams"])
 
 
 class StreamEventBody(BaseModel):
-    """The payload documented in `requerimiento-integracion-streaming-cconecta`.
+    """The payload agreed for a stream lifecycle event.
 
-    Unknown fields are ignored on purpose: if QForest adds a field later the
+    Unknown fields are ignored on purpose: if the sender adds a field later the
     receiver keeps working instead of rejecting valid events.
     """
 
@@ -25,7 +25,7 @@ class StreamEventBody(BaseModel):
 
     camera_device_id: str = Field(min_length=1, max_length=64, examples=["CLA58"])
     datetime: dt.datetime = Field(examples=["2026-10-27T15:32:24.935000+00:00"])
-    url: str = Field(examples=["wss://hls.media.qforest.online/qforest/CLA58"])
+    url: str = Field(examples=["wss://media.example.com/live/CLA58"])
     electromagnetic_spectrum: str = Field(default="combined", min_length=1, max_length=64)
     state: StreamState = Field(examples=["LIVE"])
 
@@ -79,8 +79,8 @@ def _parse_event(raw_body: bytes) -> StreamEventBody:
 
 
 @router.post(
-    "/qforest/streams",
-    summary="Receive one QForest stream lifecycle event",
+    "/streams",
+    summary="Receive one stream lifecycle event",
     status_code=200,
     responses={
         200: {"description": "Event accepted."},

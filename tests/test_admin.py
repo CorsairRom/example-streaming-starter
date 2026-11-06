@@ -72,7 +72,7 @@ def test_created_key_works_against_the_webhook(
     assert key is not None
 
     response = client.post(
-        "/webhooks/qforest/streams",
+        "/webhooks/streams",
         json=payload,
         headers={"X-API-Key": key.group(1)},
     )

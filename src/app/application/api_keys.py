@@ -12,7 +12,7 @@ from app.infrastructure.security import generate_key, hash_secret, split_key, ve
 
 
 class ApiKeyService:
-    """Create, rotate, revoke and verify the API keys c-Conecta hands to QForest."""
+    """Create, rotate, revoke and verify the API keys the operator hands to the sender."""
 
     def __init__(self, repository: ApiKeyRepository) -> None:
         self._repository = repository

@@ -7,7 +7,7 @@ cambiar algo. Está pensado para alguien que nunca trabajó con FastAPI.
 
 ```text
                        ┌──────────────────────────────────────────┐
-   QForest  ──POST──►  │  FastAPI                                 │
+   Emisor   ──POST──►  │  FastAPI                                 │
    (cámara LIVE /      │                                          │
     DEFERRED)          │  api/routes/webhook.py                   │
                        │    ├─ require_api_key  ──► 401           │
@@ -34,8 +34,8 @@ Dos caminos de entrada, una sola base de código:
 
 ## 2. Capas
 
-La estructura imita las convenciones de `qforest-be` (domain / application / infrastructure), adaptadas
-a FastAPI. La regla es simple: **las dependencias apuntan hacia adentro**.
+La estructura separa dominio, aplicación e infraestructura, adaptada a FastAPI. La regla es simple:
+**las dependencias apuntan hacia adentro**.
 
 | Capa | Carpeta | Responsabilidad | Puede importar |
 | --- | --- | --- | --- |
@@ -79,7 +79,7 @@ a FastAPI. La regla es simple: **las dependencias apuntan hacia adentro**.
 
 ## 3. Flujo de un webhook
 
-1. QForest hace `POST /webhooks/qforest/streams` con `X-API-Key`.
+1. El emisor hace `POST /webhooks/streams` con `X-API-Key`.
 2. FastAPI resuelve `require_api_key` **antes** de tocar el body.
    - Sin header → `401 STREAM_API_KEY_MISSING`.
    - Prefijo desconocido, clave revocada o hash que no coincide → `401 STREAM_API_KEY_INVALID`.
@@ -87,7 +87,7 @@ a FastAPI. La regla es simple: **las dependencias apuntan hacia adentro**.
    - `state` se pasa a mayúsculas y debe ser `LIVE` o `DEFERRED`.
    - `datetime` debe traer zona horaria; se convierte a UTC.
    - `url` debe empezar con `wss://` y tener host.
-   - Campos desconocidos se **ignoran** (para no romper si QForest agrega campos).
+   - Campos desconocidos se **ignoran** (para no romper si el emisor agrega campos).
    - Cualquier falla → `422 STREAM_PAYLOAD_INVALID` con el detalle por campo.
 4. `StreamEventController.receive()` registra el evento en el log.
 5. Recién entonces se actualiza `last_used_at` de la clave y se responde `200 {"status": "accepted"}`.
@@ -170,7 +170,7 @@ recorrer toda la tabla.
 | Hash `scrypt` de la stdlib | Sin dependencias extra y es un KDF de memoria dura. | ~50 ms por verificación; aceptable a este volumen. |
 | Prefijo en claro + secreto hasheado | Permite buscar sin guardar la clave. | El prefijo visible no es secreto (por diseño). |
 | Panel server-rendered + Jinja2 | Sin build de JS, sin CDN, funciona offline. | Menos interactivo; suficiente para CRUD de claves. |
-| `extra="ignore"` en el payload | Si QForest agrega un campo, la integración no se rompe. | Un campo mal escrito por QForest se ignora en silencio. |
+| `extra="ignore"` en el payload | Si el emisor agrega un campo, la integración no se rompe. | Un campo mal escrito se ignora en silencio. |
 | Body leído a mano en el handler | Garantiza `401` antes de `422` aunque el JSON esté roto. | Se pierde la validación automática de FastAPI; se rearma como `AppError`. |
 | `last_used_at` solo en eventos aceptados | Un request rechazado no altera la base. | No refleja intentos fallidos (van al log). |
 | `src/run.py` como entrypoint | `HOST` y `PORT` salen de `.env`: una sola fuente de verdad. | Hay que usar `make run` (o `python src/run.py`), no `uvicorn` a mano. |
@@ -204,4 +204,4 @@ recorrer toda la tabla.
 - Errores de negocio como clases de `AppError`; nunca `raise HTTPException` desde la capa de aplicación.
 - La capa `domain` no importa FastAPI, SQLAlchemy ni Pydantic.
 - Un test por regla observable, a través de la interfaz pública (HTTP o servicio).
-- `line-length = 100`, reglas de `ruff` equivalentes a las de `qforest-be`.
+- `line-length = 100` con reglas estrictas de `ruff`.

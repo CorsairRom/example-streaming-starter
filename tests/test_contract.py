@@ -19,7 +19,7 @@ from sqlalchemy import select, text
 from app.domain.entities import StreamState
 from app.infrastructure.models import ApiKeyModel
 
-WEBHOOK = "/webhooks/qforest/streams"
+WEBHOOK = "/webhooks/streams"
 LOGIN = "/admin/login"
 COOKIE = "cconecta_admin"
 ADMIN_PASSWORD = "super-secret"  # tests/conftest.py
