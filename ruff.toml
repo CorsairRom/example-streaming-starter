@@ -1,0 +1,41 @@
+line-length = 100
+target-version = "py312"
+
+lint.select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "N",
+    "UP",
+    "B",
+    "S",
+    "SIM",
+    "C4",
+    "RET",
+    "ARG",
+    "PTH",
+    "PL",
+    "RUF",
+    "ASYNC",
+    "DTZ",
+    "TRY",
+    "ERA",
+    "T20",
+]
+
+lint.ignore = [
+    # FastAPI's Depends()/Query() are meant to be called in argument defaults.
+    "B008",
+    # Endpoint signatures legitimately take several parameters.
+    "PLR0913",
+    # Magic numbers in comparisons are acceptable inside validators.
+    "PLR2004",
+]
+
+[lint.per-file-ignores]
+"./tests/**" = ["S101", "S105", "S106", "ARG001", "PLR2004"]
+"*/templates/**" = ["ALL"]
+
+[format]
+exclude = []
