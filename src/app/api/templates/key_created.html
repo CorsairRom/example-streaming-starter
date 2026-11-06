@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}API key {{ action }} · {{ app_name }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>API key {{ action }}</h1>
+  <p class="warn">
+    Copiá esta clave ahora. No se vuelve a mostrar: en la base de datos solo queda su hash.
+  </p>
+  <p class="muted">Nombre: <strong>{{ name }}</strong></p>
+  <code id="api-key" class="key">{{ api_key }}</code>
+  <div class="row" style="margin-top: 16px">
+    <button type="button" onclick="copyKey(this)">Copiar clave</button>
+    <a href="/admin"><button class="secondary" type="button" style="pointer-events: none">Volver al panel</button></a>
+  </div>
+  <p class="muted" style="margin-top: 20px">
+    Entregala por un canal seguro. QForest debe enviarla en cada POST:
+  </p>
+  <code class="key">X-API-Key: {{ api_key }}</code>
+</section>
+<script>
+  function copyKey(button) {
+    const text = document.getElementById("api-key").textContent.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      button.textContent = "Copiada";
+      setTimeout(() => { button.textContent = "Copiar clave"; }, 2000);
+    });
+  }
+</script>
+{% endblock %}

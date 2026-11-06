@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}API keys · {{ app_name }}{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="topbar">
+    <div>
+      <h1>API keys</h1>
+      <p class="muted">
+        Cada clave se entrega a QForest y viaja en el header <code style="display:inline;padding:2px 6px">X-API-Key</code>.
+      </p>
+    </div>
+    <form method="post" action="/admin/logout">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <button class="secondary" type="submit">Salir</button>
+    </form>
+  </div>
+
+  {% if keys %}
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Prefijo</th>
+        <th>Creada</th>
+        <th>Último uso</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for key in keys %}
+      <tr>
+        <td>{{ key.name }}</td>
+        <td><code style="display:inline;padding:2px 6px">cck_{{ key.prefix }}_…</code></td>
+        <td class="muted">{{ key.created_at.strftime("%Y-%m-%d %H:%M") }} UTC</td>
+        <td class="muted">
+          {% if key.last_used_at %}{{ key.last_used_at.strftime("%Y-%m-%d %H:%M") }} UTC{% else %}nunca{% endif %}
+        </td>
+        <td>
+          {% if key.is_active %}
+          <span class="badge active">activa</span>
+          {% else %}
+          <span class="badge revoked">revocada</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="actions">
+            {% if key.is_active %}
+            <form method="post" action="/admin/keys/{{ key.id }}/rotate"
+                  onsubmit="return confirm('La clave actual dejará de funcionar. ¿Rotar?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <button class="secondary" type="submit">Rotar</button>
+            </form>
+            <form method="post" action="/admin/keys/{{ key.id }}/revoke"
+                  onsubmit="return confirm('Esta acción no se puede deshacer. ¿Revocar?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+              <button class="danger" type="submit">Revocar</button>
+            </form>
+            {% else %}
+            <span class="muted">—</span>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Todavía no hay API keys. Creá la primera para entregársela a QForest.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Crear una API key</h2>
+  <form method="post" action="/admin/keys" class="row">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+    <div style="flex: 1 1 260px">
+      <label for="name">Nombre (para identificarla)</label>
+      <input id="name" name="name" type="text" placeholder="c-conecta-produccion" required />
+    </div>
+    <button type="submit">Crear key</button>
+  </form>
+  <p class="muted" style="margin-top: 12px">
+    La clave completa se muestra una sola vez. Después solo queda el prefijo y su hash.
+  </p>
+</section>
+{% endblock %}
