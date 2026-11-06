@@ -1,0 +1,64 @@
+# Ejemplos ejecutables
+#
+# Compatible con la extensión "REST Client" de VS Code y con Thunder Client.
+# 1. Levantar el servicio: make run
+# 2. Crear una API key en http://127.0.0.1:8000/admin
+# 3. Reemplazar el valor de @apiKey
+
+@baseUrl = http://127.0.0.1:8000
+@apiKey = cck_reemplazar_por_una_clave_real
+
+### Health check
+GET {{baseUrl}}/health
+
+### OpenAPI
+GET {{baseUrl}}/openapi.json
+
+### Evento LIVE (inicio de transmisión)
+POST {{baseUrl}}/webhooks/qforest/streams
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "camera_device_id": "CLA58",
+  "datetime": "2026-10-27T15:32:24.935000+00:00",
+  "url": "wss://hls.media.qforest.online/qforest/CLA58",
+  "electromagnetic_spectrum": "combined",
+  "state": "LIVE"
+}
+
+### Evento DEFERRED (fin de transmisión)
+POST {{baseUrl}}/webhooks/qforest/streams
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "camera_device_id": "CLA58",
+  "datetime": "2026-10-27T15:40:00.000000+00:00",
+  "url": "wss://hls.media.qforest.online/qforest/CLA58",
+  "electromagnetic_spectrum": "combined",
+  "state": "DEFERRED"
+}
+
+### Sin API key (espera 401)
+POST {{baseUrl}}/webhooks/qforest/streams
+Content-Type: application/json
+
+{
+  "camera_device_id": "CLA58",
+  "datetime": "2026-10-27T15:32:24.935000+00:00",
+  "url": "wss://hls.media.qforest.online/qforest/CLA58",
+  "state": "LIVE"
+}
+
+### Payload inválido (espera 422)
+POST {{baseUrl}}/webhooks/qforest/streams
+Content-Type: application/json
+X-API-Key: {{apiKey}}
+
+{
+  "camera_device_id": "CLA58",
+  "datetime": "2026-10-27T15:32:24",
+  "url": "https://hls.media.qforest.online/qforest/CLA58",
+  "state": "LIVE"
+}
