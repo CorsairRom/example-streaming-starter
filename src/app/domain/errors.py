@@ -8,8 +8,14 @@ class AppError(Exception):
     code: str = "APP_ERROR"
     default_message: str = "Unexpected error."
 
-    def __init__(self, message: str | None = None) -> None:
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        details: list[dict[str, object]] | None = None,
+    ) -> None:
         self.message = message or self.default_message
+        self.details = details or []
         super().__init__(self.message)
 
 

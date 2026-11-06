@@ -27,10 +27,27 @@ logging.basicConfig(
 SESSION_COOKIE = "cconecta_admin"
 SESSION_MAX_AGE_SECONDS = 8 * 60 * 60
 
+DEFAULT_ADMIN_PASSWORD = "change-me-please"  # noqa: S105
+DEFAULT_SESSION_SECRET = "change-me-too-this-signs-the-admin-cookie"  # noqa: S105
+
+logger = logging.getLogger(__name__)
+
+
+def _warn_on_insecure_defaults(settings: Settings) -> None:
+    if (
+        settings.admin_password == DEFAULT_ADMIN_PASSWORD
+        or settings.session_secret == DEFAULT_SESSION_SECRET
+    ):
+        logger.warning(
+            "Using default admin credentials or session secret. "
+            "Change ADMIN_PASSWORD and SESSION_SECRET before exposing the service."
+        )
+
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     """Build the application. Tests call this with their own settings."""
     settings = settings or get_settings()
+    _warn_on_insecure_defaults(settings)
 
     engine = build_engine(settings)
     create_schema(engine)

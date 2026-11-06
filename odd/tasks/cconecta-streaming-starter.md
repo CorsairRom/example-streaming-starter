@@ -35,7 +35,8 @@ S8. Documentacion de arranque en `README.md`, arquitectura en `ARCHITECTURE.md`,
 ## Tasks
 
 - T1 — Esqueleto (pyproject, ruff, Makefile, .env.example, .gitignore, .python-version) — S8 — `done`
-- T2 — Tests de contrato del webhook y de API keys (RED) — S1-S4, S6 — `done` (RED: `ModuleNotFoundError: No module named 'app'`)
+- T2 — Tests de contrato del webhook y de API keys (RED) — S1-S4, S6 — `done`
+  (RED: `ModuleNotFoundError: No module named 'app'`)
 - T3 — Dominio + aplicacion + infraestructura (SQLite, hashing, repositorios) — S2, S5, S6 — `done`
 - T4 — Rutas FastAPI del webhook, health y dependencias de auth — S1-S4, S7 — `done`
 - T5 — Panel admin (login, sesion, CSRF, crear/rotar/revocar) — S5, S6 — `done`
@@ -77,3 +78,13 @@ L5 (2026-11-06, decision): el repo queda en `/home/rmoore/dev/personal/cconecta-
 (pedido L2) y usa `--app-dir src` en uvicorn para no exigir un paquete instalable. La UI y la
 documentacion van en espanol neutro porque el destinatario es un equipo chileno sin experiencia en
 APIs; el codigo, los identificadores y los comentarios quedan en ingles.
+
+L6 (2026-11-06, verificacion independiente): el verificador reporto 2 blockers. B1: FastAPI parsea el
+body declarado antes de resolver dependencias, asi que un request sin API key y con JSON roto devolvia
+422 en vez de 401. B2: `last_used_at` se actualizaba en la dependencia de auth, antes de validar el
+payload, asi que un 422 mutaba la base. Corregidos: el handler lee el body crudo y lo valida a mano
+(`_parse_event`), y `touch` se movio a `ApiKeyService.mark_used`, llamado solo tras aceptar el evento.
+Ademas se exige host en `wss://` y se agregaron los 23 probes del verificador como
+`tests/test_verification_regressions.py`. Recheck: `45 passed`, `ruff check` limpio, `markdownlint` 0
+issues, y smoke real: sin key + JSON roto 401, key invalida + JSON roto 401, key valida + JSON roto 422,
+LIVE valido 200, `wss:///nohost` 422.

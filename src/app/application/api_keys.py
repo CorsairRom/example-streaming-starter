@@ -64,5 +64,8 @@ class ApiKeyService:
         if not verify_secret(secret, stored.salt, stored.key_hash):
             raise StreamApiKeyInvalidError()
 
-        self._repository.touch(stored.record.id)
         return stored.record
+
+    def mark_used(self, key_id: int) -> None:
+        """Record a successful use. Never called for a rejected request."""
+        self._repository.touch(key_id)

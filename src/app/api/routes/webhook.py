@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import datetime as dt
-from datetime import UTC
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from fastapi import APIRouter, Depends, Request
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from app.api.deps import get_container, require_api_key
 from app.container import Container
 from app.domain.entities import ApiKeyRecord, StreamEvent, StreamState
+from app.domain.errors import StreamPayloadInvalidError
 
 router = APIRouter(prefix="/webhooks", tags=["qforest webhook"])
 
@@ -35,13 +35,17 @@ class StreamEventBody(BaseModel):
         if value.tzinfo is None:
             msg = "datetime must include a timezone offset (UTC is expected)."
             raise ValueError(msg)
-        return value.astimezone(UTC)
+        return value.astimezone(dt.UTC)
 
     @field_validator("url")
     @classmethod
-    def require_wss(cls, value: str) -> str:
-        if not value.startswith("wss://") or len(value) <= len("wss://"):
+    def require_wss_with_host(cls, value: str) -> str:
+        if not value.startswith("wss://"):
             msg = "url must be a WebSocket URL starting with wss://"
+            raise ValueError(msg)
+        host = value.removeprefix("wss://").split("/", 1)[0]
+        if not host.strip() or any(char.isspace() for char in host):
+            msg = "url must include a host after wss://"
             raise ValueError(msg)
         return value
 
@@ -49,6 +53,30 @@ class StreamEventBody(BaseModel):
     @classmethod
     def normalize_state(cls, value: object) -> object:
         return value.strip().upper() if isinstance(value, str) else value
+
+
+def _validation_details(exc: ValidationError) -> list[dict[str, Any]]:
+    return [
+        {
+            "loc": ["body", *error.get("loc", [])],
+            "msg": error.get("msg", ""),
+            "type": error.get("type", ""),
+        }
+        for error in exc.errors()
+    ]
+
+
+def _parse_event(raw_body: bytes) -> StreamEventBody:
+    """Parse the body by hand so an invalid API key always wins over bad JSON.
+
+    FastAPI parses a declared body parameter before solving dependencies, which
+    would make an unauthenticated request with malformed JSON return 422 instead
+    of 401. Reading the body inside the handler keeps authentication first.
+    """
+    try:
+        return StreamEventBody.model_validate_json(raw_body)
+    except ValidationError as exc:
+        raise StreamPayloadInvalidError(details=_validation_details(exc)) from exc
 
 
 @router.post(
@@ -61,11 +89,13 @@ class StreamEventBody(BaseModel):
         422: {"description": "Payload does not match the contract."},
     },
 )
-def receive_stream_event(
-    payload: StreamEventBody,
-    _: Annotated[ApiKeyRecord, Depends(require_api_key)],
+async def receive_stream_event(
+    request: Request,
+    api_key: Annotated[ApiKeyRecord, Depends(require_api_key)],
     container: Annotated[Container, Depends(get_container)],
 ) -> dict[str, str]:
+    payload = _parse_event(await request.body())
+
     container.stream_events.receive(
         StreamEvent(
             camera_device_id=payload.camera_device_id,
@@ -75,4 +105,5 @@ def receive_stream_event(
             state=payload.state,
         )
     )
+    container.api_keys.mark_used(api_key.id)
     return {"status": "accepted"}

@@ -158,7 +158,8 @@ Payload:
 | `electromagnetic_spectrum` | string | Opcional, por defecto `"combined"`. |
 | `state` | string | Obligatorio, `LIVE` o `DEFERRED` (se acepta cualquier combinación de mayúsculas). |
 
-Detalle completo, errores y casos borde: [docs/modules/webhook-streams/README.md](./docs/modules/webhook-streams/README.md).
+Detalle completo, errores y casos borde:
+[docs/modules/webhook-streams/README.md](./docs/modules/webhook-streams/README.md).
 
 ---
 
@@ -252,6 +253,7 @@ La arquitectura y las decisiones están explicadas en [ARCHITECTURE.md](./ARCHIT
 - [docs/modules/webhook-streams/README.md](./docs/modules/webhook-streams/README.md) — contrato del webhook.
 - [docs/modules/api-keys/README.md](./docs/modules/api-keys/README.md) — ciclo de vida de las claves.
 - [docs/error-codes-catalog.md](./docs/error-codes-catalog.md) — códigos de error.
-- [docs/webhook-examples.http](./docs/webhook-examples.http) — ejemplos ejecutables (VS Code REST Client / Thunder Client).
+- [docs/webhook-examples.http](./docs/webhook-examples.http) — ejemplos ejecutables
+  (VS Code REST Client / Thunder Client).
 - [docs/referencia/](./docs/referencia/) — requerimiento original enviado por QForest.
 - [BACKLOG.md](./BACKLOG.md) — fase 2.

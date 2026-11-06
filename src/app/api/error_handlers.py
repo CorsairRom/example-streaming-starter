@@ -11,7 +11,9 @@ from app.domain.errors import AppError
 WEBHOOK_PATH_PREFIX = "/webhooks/"
 
 
-def _error_body(code: str, message: str, details: list[dict[str, Any]] | None = None) -> dict:
+def _error_body(
+    code: str, message: str, details: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
     body: dict[str, Any] = {"error": {"code": code, "message": message}}
     if details:
         body["error"]["details"] = details
@@ -21,7 +23,7 @@ def _error_body(code: str, message: str, details: list[dict[str, Any]] | None = 
 async def app_error_handler(_: Request, exc: AppError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
-        content=_error_body(exc.code, exc.message),
+        content=_error_body(exc.code, exc.message, exc.details),
     )
 
 

@@ -80,18 +80,26 @@ a FastAPI. La regla es simple: **las dependencias apuntan hacia adentro**.
 ## 3. Flujo de un webhook
 
 1. QForest hace `POST /webhooks/qforest/streams` con `X-API-Key`.
-2. FastAPI resuelve `require_api_key` **antes** de validar el body (dependencia).
+2. FastAPI resuelve `require_api_key` **antes** de tocar el body.
    - Sin header → `401 STREAM_API_KEY_MISSING`.
    - Prefijo desconocido, clave revocada o hash que no coincide → `401 STREAM_API_KEY_INVALID`.
-   - Clave válida → se actualiza `last_used_at`.
-3. Pydantic valida `StreamEventBody`:
+3. El handler lee el body crudo y lo valida a mano con `StreamEventBody.model_validate_json`.
    - `state` se pasa a mayúsculas y debe ser `LIVE` o `DEFERRED`.
    - `datetime` debe traer zona horaria; se convierte a UTC.
-   - `url` debe empezar con `wss://`.
+   - `url` debe empezar con `wss://` y tener host.
    - Campos desconocidos se **ignoran** (para no romper si QForest agrega campos).
    - Cualquier falla → `422 STREAM_PAYLOAD_INVALID` con el detalle por campo.
 4. `StreamEventController.receive()` registra el evento en el log.
-5. Responde `200 {"status": "accepted"}`.
+5. Recién entonces se actualiza `last_used_at` de la clave y se responde `200 {"status": "accepted"}`.
+
+> **Por qué el body se lee a mano.** FastAPI parsea un parámetro de body *antes* de resolver las
+> dependencias. Con un parámetro `payload: StreamEventBody`, un request sin API key y con JSON roto
+> devolvía `422` en lugar de `401`, filtrando que el endpoint existe y procesa. Leer el body dentro del
+> handler garantiza que la autenticación siempre gane. Cubierto por
+> `tests/test_verification_regressions.py`.
+
+`last_used_at` significa "último evento **aceptado**", no "último intento": un request rechazado no
+modifica la base.
 
 ### Por qué 200 y no 204
 
@@ -165,6 +173,8 @@ recorrer toda la tabla.
 | Prefijo en claro + secreto hasheado | Permite buscar sin guardar la clave. | El prefijo visible no es secreto (por diseño). |
 | Panel server-rendered + Jinja2 | Sin build de JS, sin CDN, funciona offline. | Menos interactivo; suficiente para CRUD de claves. |
 | `extra="ignore"` en el payload | Si QForest agrega un campo, la integración no se rompe. | Un campo mal escrito por QForest se ignora en silencio. |
+| Body leído a mano en el handler | Garantiza `401` antes de `422` aunque el JSON esté roto. | Se pierde la validación automática de FastAPI; se rearma como `AppError`. |
+| `last_used_at` solo en eventos aceptados | Un request rechazado no altera la base. | No refleja intentos fallidos (van al log). |
 | `--app-dir src` en uvicorn | Evita configurar un paquete instalable. | Hay que recordarlo al invocar uvicorn a mano. |
 | Sin persistencia de eventos | El pedido original era un receptor mínimo. | No hay evidencia histórica de recepción; ver BACKLOG. |
 
