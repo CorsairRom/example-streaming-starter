@@ -12,7 +12,7 @@ APP_TARGET = "app.main:app"
 
 def main() -> None:
     """Start the API using HOST and PORT from the environment or `.env`."""
-    parser = argparse.ArgumentParser(description="Run the c-Conecta streaming starter.")
+    parser = argparse.ArgumentParser(description="Run the example streaming starter.")
     parser.add_argument(
         "--reload",
         action="store_true",

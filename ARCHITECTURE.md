@@ -148,7 +148,7 @@ con expiración de 8 horas.
 ```text
 api_keys
 ├── id             INTEGER  PK
-├── name           VARCHAR(120)   nombre visible ("c-conecta-produccion")
+├── name           VARCHAR(120)   nombre visible ("produccion")
 ├── prefix         VARCHAR(32)    UNIQUE, INDEX  (10 hex, identifica sin revelar)
 ├── key_hash       VARCHAR(128)   scrypt(secret, salt) en hex
 ├── salt           VARCHAR(64)    salt por clave
@@ -239,7 +239,7 @@ el servicio arranca con los valores por defecto que se muestran acá.
 
 | Variable | Default | Descripción |
 | --- | --- | --- |
-| `APP_NAME` | `c-Conecta Streaming Starter` | Nombre visible en `/docs` y en el panel. |
+| `APP_NAME` | `Example Streaming Starter` | Nombre visible en `/docs` y en el panel. |
 | `APP_VERSION` | `v0.1.0` | Versión reportada por `/health`. |
 | `ENV` | `local` | Entorno (`local`, `staging`, `production`). |
 | `DEBUG` | `false` | Nivel de log detallado. |

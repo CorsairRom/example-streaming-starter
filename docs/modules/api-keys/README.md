@@ -1,10 +1,10 @@
 # Módulo: API keys
 
-Cómo c-Conecta emite, entrega y administra las claves que el emisor usa para autenticarse.
+Cómo el operador emite, entrega y administra las claves que el emisor usa para autenticarse.
 
 ## Concepto
 
-La clave la genera **c-Conecta** y se la entrega al emisor por un canal seguro. El emisor la envía en
+La clave la genera **el operador** y se la entrega al emisor por un canal seguro. El emisor la envía en
 cada request:
 
 ```http
@@ -81,7 +81,7 @@ Una clave revocada no se puede rotar ni reactivar. Si se necesita volver a opera
 ## Buenas prácticas
 
 - Una clave por integración, no una clave compartida entre clientes.
-- Nombre descriptivo: `c-conecta-produccion`, `c-conecta-staging`.
+- Nombre descriptivo: `produccion`, `staging`.
 - Entregar por canal seguro (gestor de secretos, no correo ni chat).
 - Rotar ante cualquier duda, y también de forma periódica.
 - Revisar `Último uso`: una clave activa sin uso durante meses es candidata a revocación.

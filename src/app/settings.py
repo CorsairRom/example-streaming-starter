@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "c-Conecta Streaming Starter"
+    app_name: str = "Example Streaming Starter"
     app_version: str = "v0.1.0"
     env: str = "local"
     debug: bool = False

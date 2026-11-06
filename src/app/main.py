@@ -24,7 +24,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
-SESSION_COOKIE = "cconecta_admin"
+SESSION_COOKIE = "streams_admin"
 SESSION_MAX_AGE_SECONDS = 8 * 60 * 60
 
 DEFAULT_ADMIN_PASSWORD = "change-me-please"  # noqa: S105

@@ -1,5 +1,5 @@
 [project]
-name = "cconecta-streaming-starter"
+name = "example-streaming-starter"
 version = "v0.1.0"
 description = "Minimal FastAPI receiver for stream lifecycle events (LIVE / DEFERRED)"
 readme = "README.md"

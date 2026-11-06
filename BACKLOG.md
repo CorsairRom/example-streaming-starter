@@ -24,7 +24,7 @@ eventos ordenados por fecha; los tests cubren deduplicación y retención.
 
 ### 2. Simulador del emisor
 
-**Por qué.** c-Conecta no puede probar el flujo completo hasta que el emisor conecte su lado. Un
+**Por qué.** El operador no puede probar el flujo completo hasta que el emisor conecte su lado. Un
 simulador les permite validar red, HTTPS, proxy y firewall por su cuenta.
 
 **Qué hacer.**
@@ -103,7 +103,7 @@ se persisten eventos, migrar a Postgres con `psycopg`.
 
 ### 10. Reemisión a consumidores internos
 
-Si c-Conecta necesita que el evento llegue a otro sistema (ERP, monitoreo, cola), agregar un puerto
+Si el operador necesita que el evento llegue a otro sistema (ERP, monitoreo, cola), agregar un puerto
 `EventPublisher` en `domain/ports.py` con una implementación de cola y reintentos.
 
 ### 11. Multi-cliente

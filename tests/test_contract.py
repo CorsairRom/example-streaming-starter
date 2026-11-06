@@ -1,4 +1,4 @@
-"""Contract probes derived from odd/tasks/cconecta-streaming-starter.md (S1-S9).
+"""Contract probes for the documented specification (S1-S9).
 
 These pin the guarantees the service makes: authentication is resolved before the
 body is parsed, a rejected request does not mutate state, and key material is
@@ -21,7 +21,7 @@ from app.infrastructure.models import ApiKeyModel
 
 WEBHOOK = "/webhooks/streams"
 LOGIN = "/admin/login"
-COOKIE = "cconecta_admin"
+COOKIE = "streams_admin"
 ADMIN_PASSWORD = "super-secret"  # tests/conftest.py
 KEY_RE = re.compile(r"cck_[0-9a-f]{10}_[0-9a-f]{48}")
 

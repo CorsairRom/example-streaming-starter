@@ -1,4 +1,4 @@
-# c-Conecta Streaming Starter
+# Example Streaming Starter
 
 Servicio mínimo que recibe eventos de streaming por `HTTP POST` y responde `200` cuando la transmisión
 de una cámara empieza (`LIVE`) o termina (`DEFERRED`). Incluye un panel para administrar las API keys de

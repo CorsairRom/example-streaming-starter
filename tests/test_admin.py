@@ -48,11 +48,11 @@ def test_login_with_wrong_password_fails(client: TestClient) -> None:
 def test_login_and_create_key(client: TestClient) -> None:
     csrf = _login(client)
 
-    response = client.post("/admin/keys", data={"name": "c-conecta-prod", "csrf_token": csrf})
+    response = client.post("/admin/keys", data={"name": "produccion", "csrf_token": csrf})
 
     assert response.status_code == 200
     assert "cck_" in response.text
-    assert "c-conecta-prod" in response.text
+    assert "produccion" in response.text
 
 
 def test_create_key_requires_csrf(client: TestClient) -> None:
