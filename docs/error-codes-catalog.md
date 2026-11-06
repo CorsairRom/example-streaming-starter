@@ -20,7 +20,7 @@ Todas las respuestas de error tienen la misma forma:
 | --- | --- | --- | --- |
 | `STREAM_API_KEY_MISSING` | 401 | El request no trae el header `X-API-Key`. | Configurar el header en el emisor. |
 | `STREAM_API_KEY_INVALID` | 401 | La clave no existe, está revocada o el secreto no coincide. | Verificar la clave; si se perdió, rotar en el panel. |
-| `STREAM_PAYLOAD_INVALID` | 422 | El body no cumple el contrato (campo faltante, tipo incorrecto, `datetime` sin zona horaria, `url` que no es `wss://`, `state` desconocido). | Revisar `details` y corregir el payload. |
+| `STREAM_PAYLOAD_INVALID` | 422 | El body no cumple el contrato (campo faltante, tipo incorrecto, `datetime` sin zona horaria, `url` que no es `wss://`, `state` desconocido) o viene vacío. | Revisar `details` y corregir el payload. |
 
 ## Panel de administración
 

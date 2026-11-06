@@ -27,7 +27,21 @@ async def app_error_handler(_: Request, exc: AppError) -> JSONResponse:
     )
 
 
+def _missing_header_code(exc: RequestValidationError) -> str | None:
+    for error in exc.errors():
+        if error.get("type") == "missing" and "header" in error.get("loc", ()):
+            return "STREAM_API_KEY_MISSING"
+    return None
+
+
 async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    missing_header = _missing_header_code(exc)
+    if missing_header:
+        return JSONResponse(
+            status_code=401,
+            content=_error_body(missing_header, "The X-API-Key header is required."),
+        )
+
     code = (
         "STREAM_PAYLOAD_INVALID"
         if request.url.path.startswith(WEBHOOK_PATH_PREFIX)

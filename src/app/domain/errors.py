@@ -37,6 +37,10 @@ class StreamPayloadInvalidError(AppError):
     default_message = "The event payload does not match the documented contract."
 
 
+class StreamPayloadEmptyError(StreamPayloadInvalidError):
+    default_message = "The request body is empty. Send the JSON payload shown in /docs."
+
+
 class ApiKeyNotFoundError(AppError):
     status_code = 404
     code = "API_KEY_NOT_FOUND"

@@ -125,6 +125,10 @@ content-type: application/json
 {"status":"accepted"}
 ```
 
+También podés probarlo desde <http://127.0.0.1:8000/docs>: elegí `POST /webhooks/streams`, completá
+`X-API-Key` y el body ya aparece precargado con el ejemplo. Un body vacío o un JSON inválido responden
+`422` con el detalle.
+
 ---
 
 ## Contrato que se entrega al emisor

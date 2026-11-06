@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -9,9 +9,17 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from app.api.deps import get_container, require_api_key
 from app.container import Container
 from app.domain.entities import ApiKeyRecord, StreamEvent, StreamState
-from app.domain.errors import StreamPayloadInvalidError
+from app.domain.errors import StreamPayloadEmptyError, StreamPayloadInvalidError
 
 router = APIRouter(prefix="/webhooks", tags=["streams"])
+
+EXAMPLE_EVENT: dict[str, str] = {
+    "camera_device_id": "CLA58",
+    "datetime": "2026-10-27T15:32:24.935000+00:00",
+    "url": "wss://media.example.com/live/CLA58",
+    "electromagnetic_spectrum": "combined",
+    "state": "LIVE",
+}
 
 
 class StreamEventBody(BaseModel):
@@ -27,7 +35,7 @@ class StreamEventBody(BaseModel):
     datetime: dt.datetime = Field(examples=["2026-10-27T15:32:24.935000+00:00"])
     url: str = Field(examples=["wss://media.example.com/live/CLA58"])
     electromagnetic_spectrum: str = Field(default="combined", min_length=1, max_length=64)
-    state: StreamState = Field(examples=["LIVE"])
+    state: Literal["LIVE", "DEFERRED"] = Field(examples=["LIVE"])
 
     @field_validator("datetime")
     @classmethod
@@ -55,6 +63,26 @@ class StreamEventBody(BaseModel):
         return value.strip().upper() if isinstance(value, str) else value
 
 
+def request_body_openapi() -> dict[str, Any]:
+    """Describe the JSON body for `/docs`.
+
+    The handler reads the body itself (so authentication is resolved first), which
+    means FastAPI cannot infer the body parameter. This keeps the interactive
+    documentation complete, with the example prefilled.
+    """
+    return {
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/json": {
+                    "schema": StreamEventBody.model_json_schema(),
+                    "example": EXAMPLE_EVENT,
+                }
+            },
+        },
+    }
+
+
 def _validation_details(exc: ValidationError) -> list[dict[str, Any]]:
     return [
         {
@@ -72,6 +100,8 @@ def _parse_event(raw_body: bytes) -> StreamEventBody:
     FastAPI parses a declared body parameter before solving dependencies, which
     would let an unauthenticated request with malformed JSON reach validation.
     """
+    if not raw_body.strip():
+        raise StreamPayloadEmptyError()
     try:
         return StreamEventBody.model_validate_json(raw_body)
     except ValidationError as exc:
@@ -82,6 +112,7 @@ def _parse_event(raw_body: bytes) -> StreamEventBody:
     "/streams",
     summary="Receive one stream lifecycle event",
     status_code=200,
+    openapi_extra=request_body_openapi(),
     responses={
         200: {"description": "Event accepted."},
         401: {"description": "Missing or invalid API key."},
@@ -101,7 +132,7 @@ async def receive_stream_event(
             occurred_at=payload.datetime,
             url=payload.url,
             electromagnetic_spectrum=payload.electromagnetic_spectrum,
-            state=payload.state,
+            state=StreamState(payload.state),
         )
     )
     container.api_keys.mark_used(api_key.id)

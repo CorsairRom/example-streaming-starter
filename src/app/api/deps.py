@@ -22,7 +22,9 @@ def get_api_key_service(
 
 def require_api_key(
     service: Annotated[ApiKeyService, Depends(get_api_key_service)],
-    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    x_api_key: Annotated[
+        str, Header(alias="X-API-Key", description="API key issued by the operator.")
+    ],
 ) -> ApiKeyRecord:
     """Validate the `X-API-Key` header. Raises 401 through `AppError`."""
     return service.authenticate(x_api_key)

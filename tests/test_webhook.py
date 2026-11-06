@@ -110,3 +110,37 @@ def test_api_key_is_required_before_payload_validation(client: TestClient) -> No
 def test_openapi_docs_are_available(client: TestClient) -> None:
     assert client.get("/docs").status_code == 200
     assert client.get("/openapi.json").status_code == 200
+
+
+def test_openapi_documents_the_request_body(client: TestClient) -> None:
+    """Swagger needs the body field, otherwise nobody can paste the example."""
+    document = client.get("/openapi.json").json()
+    operation = document["paths"][WEBHOOK]["post"]
+
+    assert len(operation["parameters"]) == 1
+    parameter = operation["parameters"][0]
+    assert parameter["name"] == "X-API-Key"
+    assert parameter["in"] == "header"
+    assert parameter["required"] is True
+
+    body = operation["requestBody"]
+    assert body["required"] is True
+    media = body["content"]["application/json"]
+    assert media["example"]["camera_device_id"] == "CLA58"
+    assert media["example"]["state"] == "LIVE"
+    assert set(media["schema"]["required"]) == {
+        "camera_device_id",
+        "datetime",
+        "url",
+        "state",
+    }
+    assert media["schema"]["properties"]["state"]["enum"] == ["LIVE", "DEFERRED"]
+    assert "$defs" not in media["schema"]
+
+
+def test_empty_body_is_reported_clearly(client: TestClient, api_key: str) -> None:
+    response = client.post(WEBHOOK, content=b"", headers={"X-API-Key": api_key})
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "STREAM_PAYLOAD_INVALID"
+    assert "empty" in response.json()["error"]["message"]
