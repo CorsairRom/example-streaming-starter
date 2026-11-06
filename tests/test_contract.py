@@ -1,8 +1,8 @@
-"""Regression probes derived from odd/tasks/cconecta-streaming-starter.md (S1-S8).
+"""Contract probes derived from odd/tasks/cconecta-streaming-starter.md (S1-S9).
 
-These pin the behaviour that the independent verification exercised, including the
-two defects it found: authentication must win over an unparseable body, and a
-rejected request must not update `last_used_at`.
+These pin the guarantees the service makes: authentication is resolved before the
+body is parsed, a rejected request does not mutate state, and key material is
+only stored hashed.
 """
 
 from __future__ import annotations

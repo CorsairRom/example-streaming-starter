@@ -216,7 +216,6 @@ make clean     # borra .venv, caches y datos locales
 ├── src/run.py            # Entrypoint: toma HOST y PORT de .env
 ├── tests/                # Tests de contrato (webhook, api keys, panel)
 ├── docs/                 # Contrato, catálogo de errores y documento original
-├── odd/tasks/            # Registro de trabajo de la construcción inicial
 ├── Makefile
 ├── pyproject.toml
 └── ruff.toml

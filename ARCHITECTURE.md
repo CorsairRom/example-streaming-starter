@@ -93,10 +93,8 @@ a FastAPI. La regla es simple: **las dependencias apuntan hacia adentro**.
 5. Recién entonces se actualiza `last_used_at` de la clave y se responde `200 {"status": "accepted"}`.
 
 > **Por qué el body se lee a mano.** FastAPI parsea un parámetro de body *antes* de resolver las
-> dependencias. Con un parámetro `payload: StreamEventBody`, un request sin API key y con JSON roto
-> devolvía `422` en lugar de `401`, filtrando que el endpoint existe y procesa. Leer el body dentro del
-> handler garantiza que la autenticación siempre gane. Cubierto por
-> `tests/test_verification_regressions.py`.
+> dependencias. Leer el body dentro del handler mantiene la autenticación como primer paso del request.
+> Cubierto por `tests/test_contract.py`.
 
 `last_used_at` significa "último evento **aceptado**", no "último intento": un request rechazado no
 modifica la base.
@@ -106,12 +104,6 @@ modifica la base.
 El requerimiento acepta `200` o `204`. Se elige `200` con un body mínimo porque, para un equipo que
 recién empieza, ver `{"status":"accepted"}` confirma que el request llegó al código y no a un proxy.
 Cambiar a `204` es una línea en `routes/webhook.py`.
-
-### Dónde se define el puerto
-
-`HOST` y `PORT` se leen en `settings.py` y los consume `src/run.py`. El `Makefile` no fija ninguno: si
-`make run` pasara `--port 8000`, ese flag pisaría el valor de `.env` (uvicorn prioriza sus flags sobre la
-configuración de la app). Esa fue una falla real de la primera versión, pineada por `tests/test_run.py`.
 
 ## 4. Flujo del panel
 
@@ -182,7 +174,7 @@ recorrer toda la tabla.
 | Body leído a mano en el handler | Garantiza `401` antes de `422` aunque el JSON esté roto. | Se pierde la validación automática de FastAPI; se rearma como `AppError`. |
 | `last_used_at` solo en eventos aceptados | Un request rechazado no altera la base. | No refleja intentos fallidos (van al log). |
 | `src/run.py` como entrypoint | `HOST` y `PORT` salen de `.env`: una sola fuente de verdad. | Hay que usar `make run` (o `python src/run.py`), no `uvicorn` a mano. |
-| Sin persistencia de eventos | El pedido original era un receptor mínimo. | No hay evidencia histórica de recepción; ver BACKLOG. |
+| Sin persistencia de eventos | Fase 1 solo confirma la recepción. | No hay historial consultable; ver BACKLOG. |
 
 ## 9. Cómo extender
 

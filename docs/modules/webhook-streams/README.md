@@ -133,20 +133,6 @@ curl -i -X POST "$API_URL/webhooks/qforest/streams" \
 | Body no es JSON | `422 STREAM_PAYLOAD_INVALID`. |
 | Clave revocada | `401 STREAM_API_KEY_INVALID`. |
 
-## Preguntas abiertas para QForest
-
-Estas ambigüedades vienen del documento original y conviene cerrarlas por escrito antes de producción:
-
-1. **`LIVE` vs `Live`.** El ejemplo del documento usa `"Live"` y el diccionario de datos dice `"LIVE"`.
-   Este servicio acepta ambos. Confirmar cuál será el valor canónico.
-2. **Identificador de evento.** El payload no trae `event_id`. Sin él, un reintento es indistinguible de
-   un evento nuevo. Se recomienda agregarlo.
-3. **Reintentos.** ¿Cuántos, con qué backoff y por cuánto tiempo? El receptor es rápido, pero si QForest
-   reintenta 10 veces por minuto no hay problema; si reintenta por días, hace falta deduplicar.
-4. **Timeout esperado.** Se recomienda 5 segundos. Confirmar que es compatible con su cliente.
-5. **HMAC.** ¿QForest puede firmar el body además de enviar la API key? Ver [BACKLOG](../../../BACKLOG.md).
-6. **Volumen.** Cantidad estimada de cámaras y eventos por minuto, para dimensionar el despliegue.
-
 ## Implementación
 
 - Ruta: `src/app/api/routes/webhook.py`

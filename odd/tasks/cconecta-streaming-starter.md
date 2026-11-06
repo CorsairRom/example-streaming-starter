@@ -35,6 +35,10 @@ S8. Documentacion de arranque en `README.md`, arquitectura en `ARCHITECTURE.md`,
 S9. `HOST` y `PORT` se leen de la configuracion (`.env` o variables de entorno). Ningun target del
 `Makefile` fija host ni puerto: cambiar `.env` debe ser suficiente para mover el servidor de puerto.
 
+S10. La documentacion de cara al cliente (`README.md`, `ARCHITECTURE.md`, `BACKLOG.md`, `docs/**`) no
+incluye preguntas abiertas ni narrativa de decisiones o errores pasados: describe solo el estado actual
+del sistema.
+
 ## Tasks
 
 - T1 — Esqueleto (pyproject, ruff, Makefile, .env.example, .gitignore, .python-version) — S8 — `done`
@@ -98,3 +102,10 @@ puerto 8000 ocupado ... fui al .env a cambiar el puerto al 8100 y no paso nada".
 pasaba `--host 127.0.0.1 --port 8000` a uvicorn, y esos flags pisan la configuracion de la app; ademas
 `HOST`/`PORT` de `Settings` no los leia nadie. Corregido con `src/run.py` (unica fuente de verdad) y el
 `Makefile` ya no fija host ni puerto. Regresion en `tests/test_run.py`.
+
+L8 (2026-11-06, pedido del humano): "Vale pero quitame de la documentacion las preguntas abiertas y
+tambien deciciones pasadas, la documentacion tiene que etar sin contexto de errores pasados siempre
+contexto limpio". Se elimino la seccion "Preguntas abiertas para QForest", la nota de puerto que
+narraba la falla, la nota final del backlog sobre el pedido y las referencias a la verificacion previa.
+Las decisiones de diseno quedan descritas en presente. `odd/tasks/` se conserva como registro interno y
+ya no se referencia desde el README.

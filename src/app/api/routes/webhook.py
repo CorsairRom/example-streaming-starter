@@ -67,11 +67,10 @@ def _validation_details(exc: ValidationError) -> list[dict[str, Any]]:
 
 
 def _parse_event(raw_body: bytes) -> StreamEventBody:
-    """Parse the body by hand so an invalid API key always wins over bad JSON.
+    """Parse the body inside the handler so authentication is resolved first.
 
     FastAPI parses a declared body parameter before solving dependencies, which
-    would make an unauthenticated request with malformed JSON return 422 instead
-    of 401. Reading the body inside the handler keeps authentication first.
+    would let an unauthenticated request with malformed JSON reach validation.
     """
     try:
         return StreamEventBody.model_validate_json(raw_body)

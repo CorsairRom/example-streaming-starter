@@ -1,4 +1,4 @@
-"""The server must take HOST and PORT from the configuration, not from the Makefile."""
+"""The server takes HOST and PORT from the configuration, not from the Makefile."""
 
 from __future__ import annotations
 
@@ -52,8 +52,8 @@ def test_run_enables_reload_with_the_flag(monkeypatch: pytest.MonkeyPatch) -> No
     assert captured["reload"] is True
 
 
-def test_makefile_does_not_hardcode_a_port() -> None:
-    """Regression: `make run` used to pass `--port 8000`, shadowing `.env`."""
+def test_makefile_delegates_to_the_entrypoint() -> None:
+    """The Makefile must not pin host or port; the entrypoint reads them."""
     makefile = Path("Makefile").read_text()
 
     assert "uv run python src/run.py" in makefile

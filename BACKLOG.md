@@ -1,7 +1,7 @@
 # Backlog — fase 2
 
-El pedido original para esta entrega fue **un receptor mínimo que responda `200`**. Estas son las
-recomendaciones que quedaron fuera, en orden de valor para la integración. No están implementadas.
+Alcance actual: **un receptor mínimo que responde `200`**. Las siguientes son mejoras fuera de ese
+alcance, en orden de valor para la integración. No están implementadas.
 
 ## Prioridad alta
 
@@ -110,10 +110,3 @@ Si c-Conecta necesita que el evento llegue a otro sistema (ERP, monitoreo, cola)
 
 Hoy hay un único conjunto de claves. Si el servicio se comparte entre clientes, agregar `client_id` a
 la tabla de claves y segmentar el panel.
-
----
-
-## Nota sobre el pedido
-
-La persistencia de eventos y el simulador fueron **explícitamente postergados** a otra fase. Este
-documento los deja registrados para que la decisión no se pierda.
