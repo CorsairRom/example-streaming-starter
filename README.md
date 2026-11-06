@@ -1,149 +1,105 @@
 # c-Conecta Streaming Starter
 
-Receptor mínimo para eventos de streaming: recibe por `HTTP POST` el inicio (`LIVE`) y el fin
-(`DEFERRED`) de una transmisión de cámara.
+Servicio mínimo que recibe eventos de streaming por `HTTP POST` y responde `200` cuando la transmisión
+de una cámara empieza (`LIVE`) o termina (`DEFERRED`). Incluye un panel para administrar las API keys de
+quien envía esos eventos.
 
-El servicio lo opera c-Conecta. El **emisor** es el sistema que transmite las cámaras: envía el evento y
-se autentica con una API key que c-Conecta le entrega. Este repositorio implementa el endpoint, la
-validación de la clave y un panel para administrarlas.
-
-No hace falta saber de APIs para levantar esto: son tres comandos y una URL.
-
----
-
-## Qué incluye
-
-| Incluido | Detalle |
-| --- | --- |
-| `POST /webhooks/streams` | Recibe el evento, valida la API key y responde `200`. |
-| Autenticación por API key | Header `X-API-Key`. La clave la genera c-Conecta y se la entrega al emisor. |
-| Panel de administración | `/admin`: crear, rotar y revocar claves. |
-| Documentación interactiva | `/docs` (Swagger) y `/openapi.json`. |
-| Health check | `GET /health`. |
-| Persistencia de claves | SQLite. Cero configuración. |
-| Tests | `make test` (48 casos). |
-
-## Qué **no** incluye (fase 2)
-
-- Guardar los eventos recibidos (persistencia, historial, deduplicación).
-- Simulador del emisor para probar sin esperar a una cámara real.
-- Firma HMAC del payload, rate limiting, migraciones y Postgres.
-
-Todo eso está priorizado en [BACKLOG.md](./BACKLOG.md).
+Esta guía es el **camino feliz**, con la configuración de ejemplo tal como viene el repositorio. Para
+cambiar puerto, credenciales o base de datos, y para entender el diseño, ver
+[ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ---
 
-## Requisitos
+## Antes de empezar
 
-- **Python 3.12**
-- **[uv](https://docs.astral.sh/uv/)** (maneja el entorno virtual y las dependencias)
+- Python 3.12
+- [`uv`](https://docs.astral.sh/uv/)
 - `make`
-- `curl` (solo para las pruebas manuales)
 
-Verificar:
+---
+
+## Paso 1 — Instalar
 
 ```bash
-python3.12 --version
-uv --version
-make --version
+make install
 ```
 
----
+Crea el entorno virtual e instala las dependencias.
 
-## Inicio rápido
+## Paso 2 — Ejecutar
 
 ```bash
-# 1. Instalar dependencias (crea .venv automáticamente)
-make install
-
-# 2. Crear la configuración local
-cp .env.example .env
-
-# 3. Levantar el servidor
 make run
 ```
 
-Queda escuchando en la dirección de `HOST` y `PORT` en `.env` (por defecto `http://127.0.0.1:8000`).
-Si ese puerto está ocupado, cambie `PORT` en `.env` y vuelva a ejecutar `make run`: no hay que tocar el
-`Makefile`.
+Queda escuchando en <http://127.0.0.1:8000>.
 
-| Recurso | URL |
+> Todos los links de esta guía usan el puerto por defecto (`8000`). Si `PORT` en tu `.env` tiene otro
+> número, reemplazalo en las URLs.
+
+## Paso 3 — Entrar al panel
+
+Abrí <http://127.0.0.1:8000/admin> y usá las credenciales de ejemplo:
+
+| Campo | Valor |
 | --- | --- |
-| Panel de administración | <http://127.0.0.1:8000/admin> |
-| Documentación interactiva | <http://127.0.0.1:8000/docs> |
-| Health check | <http://127.0.0.1:8000/health> |
+| Usuario | `admin` |
+| Contraseña | `change-me-please` |
 
-> Antes de exponer el servicio a internet, cambie `ADMIN_PASSWORD` y `SESSION_SECRET` en `.env`.
-> Para generar un secreto: `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+## Paso 4 — Crear una API key
 
----
+1. En **Crear una API key**, escribí un nombre, por ejemplo `prueba`.
+2. Presioná **Crear key**.
+3. Copiá la clave completa (`cck_...`). **Se muestra una sola vez**; no se puede recuperar después.
 
-## Primer uso en 5 minutos
+## Paso 5 — Abrir Swagger
 
-### 1. Ingresar al panel
+Ir a <http://127.0.0.1:8000/docs>.
 
-Abra <http://127.0.0.1:8000/admin> e ingrese con `ADMIN_USERNAME` / `ADMIN_PASSWORD` del archivo `.env`
-(por defecto `admin` / `change-me-please`).
+## Paso 6 — Probar el endpoint
 
-### 2. Crear una API key
+1. Buscá la sección **streams**.
+2. Abrí `POST /webhooks/streams` y presioná **Try it out**.
+3. En el campo `X-API-Key`, pegá la clave del paso 4.
+4. El body ya viene precargado con el ejemplo; no hace falta editarlo.
+5. Presioná **Execute**.
 
-En el panel, escriba un nombre (por ejemplo `c-conecta-produccion`) y presione **Crear key**.
-
-La clave se muestra **una sola vez**:
-
-```text
-cck_9aa3d10908_6f1c3a4d9e8b7a2c5d0e1f3a4b6c7d8e9f0a1b2c
-```
-
-Cópiela y entréguela al emisor por un canal seguro. En la base de datos solo queda el prefijo y un hash
-`scrypt`: **no se puede recuperar**. Si se pierde, se rota y se entrega la nueva.
-
-### 3. Probar el endpoint
-
-```bash
-export API_URL="http://127.0.0.1:8000"
-export API_KEY="cck_...la clave completa..."
-
-curl -i -X POST "$API_URL/webhooks/streams" \
-  -H "X-API-Key: $API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "camera_device_id": "CLA58",
-    "datetime": "2026-10-27T15:32:24.935000+00:00",
-    "url": "wss://media.example.com/live/CLA58",
-    "electromagnetic_spectrum": "combined",
-    "state": "LIVE"
-  }'
-```
-
-Respuesta esperada:
+## Paso 7 — Ver la respuesta
 
 ```http
-HTTP/1.1 200 OK
-content-type: application/json
-
-{"status":"accepted"}
+200 OK
+{"status": "accepted"}
 ```
 
-También podés probarlo desde <http://127.0.0.1:8000/docs>: elegí `POST /webhooks/streams`, completá
-`X-API-Key` y el body ya aparece precargado con el ejemplo. Un body vacío o un JSON inválido responden
-`422` con el detalle.
+Listo: el servicio recibió el evento, validó la clave y confirmó.
 
 ---
 
-## Contrato que se entrega al emisor
+## Qué significa cada respuesta
 
-Esto es lo único que el emisor necesita para integrarse:
+| Respuesta | Significado |
+| --- | --- |
+| `200 {"status":"accepted"}` | Evento recibido y aceptado. |
+| `401 STREAM_API_KEY_MISSING` | Falta el header `X-API-Key`. |
+| `401 STREAM_API_KEY_INVALID` | La clave no existe o fue revocada. |
+| `422 STREAM_PAYLOAD_INVALID` | El body no cumple el contrato; `details` indica qué campo falló. |
+
+Catálogo completo: [docs/error-codes-catalog.md](./docs/error-codes-catalog.md).
+
+---
+
+## Próximo paso — Entregar la clave al emisor
+
+Esto es lo único que necesita quien envía los eventos:
 
 | Dato | Valor |
 | --- | --- |
 | Método | `POST` |
-| URL | `https://<dominio-de-c-conecta>/webhooks/streams` |
-| Header de autenticación | `X-API-Key: <clave entregada por c-Conecta>` |
+| URL | `https://<tu-dominio>/webhooks/streams` |
+| Header | `X-API-Key: <clave>` |
 | Content-Type | `application/json` |
 | Respuesta de éxito | `200 OK` con `{"status":"accepted"}` |
 | Timeout recomendado | 5 segundos |
-| Reintentos recomendados | Sí, con backoff; el receptor todavía no deduplica (ver BACKLOG) |
 
 Payload:
 
@@ -157,110 +113,22 @@ Payload:
 }
 ```
 
-| Campo | Tipo | Regla en este servicio |
-| --- | --- | --- |
-| `camera_device_id` | string | Obligatorio, 1 a 64 caracteres. |
-| `datetime` | string ISO-8601 | Obligatorio, **debe incluir zona horaria**. Se normaliza a UTC. |
-| `url` | string | Obligatorio, debe empezar con `wss://`. |
-| `electromagnetic_spectrum` | string | Opcional, por defecto `"combined"`. |
-| `state` | string | Obligatorio, `LIVE` o `DEFERRED` (se acepta cualquier combinación de mayúsculas). |
-
-Detalle completo, errores y casos borde:
+Contrato completo y casos borde:
 [docs/modules/webhook-streams/README.md](./docs/modules/webhook-streams/README.md).
 
 ---
 
-## Configuración
+## Documentación técnica
 
-Toda la configuración vive en `.env` (ver `.env.example`). Nunca se versiona.
+| Documento | Contenido |
+| --- | --- |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Capas, flujos, configuración, comandos, seguridad y problemas frecuentes. |
+| [docs/modules/webhook-streams/README.md](./docs/modules/webhook-streams/README.md) | Contrato del webhook y casos borde. |
+| [docs/modules/api-keys/README.md](./docs/modules/api-keys/README.md) | Ciclo de vida de las claves. |
+| [docs/error-codes-catalog.md](./docs/error-codes-catalog.md) | Códigos de error. |
+| [docs/webhook-examples.http](./docs/webhook-examples.http) | Ejemplos ejecutables. |
+| [BACKLOG.md](./BACKLOG.md) | Mejoras fuera del alcance actual. |
 
-| Variable | Default | Descripción |
-| --- | --- | --- |
-| `APP_NAME` | `c-Conecta Streaming Starter` | Nombre visible en `/docs` y en el panel. |
-| `APP_VERSION` | `v0.1.0` | Versión reportada por `/health`. |
-| `ENV` | `local` | Entorno (`local`, `staging`, `production`). |
-| `DEBUG` | `false` | Modo de depuración. |
-| `HOST` / `PORT` | `127.0.0.1` / `8000` | Dirección de escucha. Los usa `make run`. |
-| `DATABASE_URL` | `sqlite+pysqlite:///./data/app.db` | Base de datos. SQLite por defecto. |
-| `ADMIN_USERNAME` | `admin` | Usuario del panel. |
-| `ADMIN_PASSWORD` | `change-me-please` | Contraseña del panel. **Cambiar.** |
-| `SESSION_SECRET` | `change-me...` | Firma la cookie de sesión. **Cambiar.** |
-| `SESSION_HTTPS_ONLY` | `false` | Poner en `true` detrás de HTTPS. |
-
----
-
-## Comandos disponibles
-
-```bash
-make help      # lista los comandos
-make install   # crea .venv e instala dependencias
-make run       # levanta el servidor
-make dev       # levanta el servidor con recarga automática
-make test      # corre los tests
-make lint      # verifica formato y lint
-make format    # formatea el código
-make check     # lint + tests
-make db-reset  # borra la base local (incluye las API keys)
-make clean     # borra .venv, caches y datos locales
-```
-
----
-
-## Estructura del proyecto
-
-```text
-.
-├── src/app/
-│   ├── api/              # Capa HTTP: rutas, dependencias, plantillas del panel
-│   ├── application/      # Casos de uso: API keys y eventos de streaming
-│   ├── domain/           # Entidades, errores y puertos (sin FastAPI ni SQLAlchemy)
-│   ├── infrastructure/   # SQLAlchemy, hash de claves, repositorios
-│   ├── container.py      # Composition root
-│   ├── main.py           # create_app() y app ASGI
-│   └── settings.py       # Configuración con pydantic-settings
-├── src/run.py            # Entrypoint: toma HOST y PORT de .env
-├── tests/                # Tests de contrato (webhook, api keys, panel)
-├── docs/                 # Contrato, catálogo de errores y documento original
-├── Makefile
-├── pyproject.toml
-└── ruff.toml
-```
-
-La arquitectura y las decisiones están explicadas en [ARCHITECTURE.md](./ARCHITECTURE.md).
-
----
-
-## Seguridad
-
-- Las API keys se guardan como `scrypt(secret, salt)` con salt por clave. Nunca en texto plano.
-- La comparación es de tiempo constante (`hmac.compare_digest`).
-- La cookie del panel es firmada, `HttpOnly` y `SameSite=Strict`.
-- Los formularios del panel usan token CSRF.
-- `/admin` no tiene rate limiting todavía (ver [BACKLOG.md](./BACKLOG.md)).
-- En producción: HTTPS obligatorio, `SESSION_HTTPS_ONLY=true`, credenciales fuera del repositorio y
-  `/admin` restringido por red o VPN si es posible.
-
----
-
-## Problemas frecuentes
-
-| Síntoma | Causa probable | Solución |
-| --- | --- | --- |
-| `401 STREAM_API_KEY_MISSING` | Falta el header `X-API-Key`. | Agregar el header en el POST. |
-| `401 STREAM_API_KEY_INVALID` | Clave revocada, rotada o mal copiada. | Crear/rotar una clave nueva en el panel. |
-| `422 STREAM_PAYLOAD_INVALID` | `datetime` sin zona horaria o `url` que no es `wss://`. | Revisar el detalle en la respuesta. |
-| `[Errno 98] address already in use` | El puerto de `PORT` está ocupado por otro proceso. | Cambiar `PORT` en `.env` (por ejemplo `8100`) y volver a `make run`. |
-| `ModuleNotFoundError: No module named 'app'` | Se levantó `uvicorn` a mano sin `--app-dir src`. | Usar `make run`. |
-| El panel no guarda la sesión | `SESSION_SECRET` cambió entre requests. | Dejar un valor fijo en `.env`. |
-
----
-
-## Documentación
-
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — capas, flujos y decisiones de diseño.
-- [docs/modules/webhook-streams/README.md](./docs/modules/webhook-streams/README.md) — contrato del webhook.
-- [docs/modules/api-keys/README.md](./docs/modules/api-keys/README.md) — ciclo de vida de las claves.
-- [docs/error-codes-catalog.md](./docs/error-codes-catalog.md) — códigos de error.
-- [docs/webhook-examples.http](./docs/webhook-examples.http) — ejemplos ejecutables
-  (VS Code REST Client / Thunder Client).
-- [BACKLOG.md](./BACKLOG.md) — fase 2.
+> Las credenciales de ejemplo (`admin` / `change-me-please`), la clave de sesión y SQLite sirven para
+> probar en local. Antes de exponer el servicio, seguí la sección **Seguridad** de
+> [ARCHITECTURE.md](./ARCHITECTURE.md).

@@ -32,6 +32,12 @@ Dos caminos de entrada, una sola base de código:
 1. **Webhook**: máquina a máquina, autenticado por `X-API-Key`.
 2. **Panel**: persona a máquina, autenticado por usuario/contraseña + cookie de sesión.
 
+### Alcance de esta entrega
+
+Incluye el receptor del webhook, la validación de la API key, el panel de claves y esta documentación.
+No persiste eventos ni deduplica: el handler registra el evento en el log y responde. Las mejoras
+pendientes están en [BACKLOG.md](./BACKLOG.md).
+
 ## 2. Capas
 
 La estructura separa dominio, aplicación e infraestructura, adaptada a FastAPI. La regla es simple:
@@ -76,6 +82,26 @@ La estructura separa dominio, aplicación e infraestructura, adaptada a FastAPI.
 - `deps.py`: dependencias de FastAPI (contenedor, servicio, API key).
 - `error_handlers.py`: traduce `AppError` y errores de validación a un JSON uniforme.
 - `templates/`: HTML del panel. CSS embebido, sin CDN: funciona sin internet.
+
+### Estructura de archivos
+
+```text
+.
+├── src/app/
+│   ├── api/              rutas HTTP, dependencias, handlers y plantillas del panel
+│   ├── application/      casos de uso: API keys y eventos de streaming
+│   ├── domain/           entidades, errores y puertos (sin FastAPI ni SQLAlchemy)
+│   ├── infrastructure/   SQLAlchemy, hash de claves, repositorios
+│   ├── container.py      composition root
+│   ├── main.py           create_app() y app ASGI
+│   └── settings.py       configuración con pydantic-settings
+├── src/run.py            entrypoint: toma HOST y PORT de la configuración
+├── tests/                contrato, API keys, panel y entrypoint
+├── docs/                 contrato, catálogo de errores y ejemplos
+├── Makefile
+├── pyproject.toml
+└── ruff.toml
+```
 
 ## 3. Flujo de un webhook
 
@@ -205,3 +231,63 @@ recorrer toda la tabla.
 - La capa `domain` no importa FastAPI, SQLAlchemy ni Pydantic.
 - Un test por regla observable, a través de la interfaz pública (HTTP o servicio).
 - `line-length = 100` con reglas estrictas de `ruff`.
+
+## 11. Configuración
+
+La configuración se lee con `pydantic-settings` desde `.env` o desde variables de entorno. Sin `.env`
+el servicio arranca con los valores por defecto que se muestran acá.
+
+| Variable | Default | Descripción |
+| --- | --- | --- |
+| `APP_NAME` | `c-Conecta Streaming Starter` | Nombre visible en `/docs` y en el panel. |
+| `APP_VERSION` | `v0.1.0` | Versión reportada por `/health`. |
+| `ENV` | `local` | Entorno (`local`, `staging`, `production`). |
+| `DEBUG` | `false` | Nivel de log detallado. |
+| `HOST` | `127.0.0.1` | Interfaz de escucha. |
+| `PORT` | `8000` | Puerto de escucha. |
+| `DATABASE_URL` | `sqlite+pysqlite:///./data/app.db` | Base de datos. |
+| `ADMIN_USERNAME` | `admin` | Usuario del panel. |
+| `ADMIN_PASSWORD` | `change-me-please` | Contraseña del panel. |
+| `SESSION_SECRET` | `change-me-too-this-signs-the-admin-cookie` | Firma la cookie de sesión. |
+| `SESSION_HTTPS_ONLY` | `false` | Marca la cookie como `Secure` (requiere HTTPS). |
+
+`HOST` y `PORT` los consume `src/run.py`. El `Makefile` no fija ninguno, así que cambiar `.env` es
+suficiente. Si el puerto está ocupado, cambiá `PORT` y volvé a ejecutar `make run`.
+
+`make db-reset` borra la base local, incluidas las API keys. La base se recrea al arrancar.
+
+## 12. Comandos
+
+| Comando | Qué hace |
+| --- | --- |
+| `make help` | Lista los comandos disponibles. |
+| `make install` | Crea `.venv` e instala las dependencias. |
+| `make run` | Levanta el servidor con `HOST` y `PORT` de la configuración. |
+| `make dev` | Igual que `run`, con recarga automática. |
+| `make test` | Corre la suite de tests. |
+| `make lint` | Verifica formato y reglas de lint. |
+| `make format` | Formatea el código y aplica correcciones seguras. |
+| `make check` | `lint` + `test`. |
+| `make db-reset` | Borra la base SQLite local. |
+| `make clean` | Borra `.venv`, caches y datos locales. |
+
+## 13. Problemas frecuentes
+
+| Síntoma | Causa probable | Solución |
+| --- | --- | --- |
+| `[Errno 98] address already in use` | El puerto de `PORT` está ocupado. | Cambiar `PORT` en `.env` y volver a `make run`. |
+| `401 STREAM_API_KEY_MISSING` | Falta el header `X-API-Key`. | Agregar el header en el request. |
+| `401 STREAM_API_KEY_INVALID` | Clave revocada, rotada o mal copiada. | Crear o rotar una clave en el panel. |
+| `422 STREAM_PAYLOAD_INVALID` | Body vacío o fuera de contrato. | Revisar `details`; el ejemplo está en `/docs`. |
+| `ModuleNotFoundError: No module named 'app'` | Se levantó `uvicorn` a mano sin `--app-dir src`. | Usar `make run`. |
+| El panel no conserva la sesión | `SESSION_SECRET` cambia entre requests. | Dejar un valor fijo en `.env`. |
+
+## 14. Seguridad
+
+- Las API keys se guardan como `scrypt(secret, salt)` con salt por clave; nunca en texto plano.
+- La comparación es de tiempo constante (`hmac.compare_digest`).
+- La cookie del panel es firmada, `HttpOnly` y `SameSite=Strict`.
+- Los formularios del panel validan token CSRF.
+- El login no tiene rate limiting todavía (ver [BACKLOG.md](./BACKLOG.md)).
+- En producción: HTTPS obligatorio, `SESSION_HTTPS_ONLY=true`, credenciales fuera del repositorio y
+  `/admin` restringido por red o VPN cuando sea posible.
